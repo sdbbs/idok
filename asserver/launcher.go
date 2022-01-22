@@ -11,14 +11,22 @@ import (
 	"os"
 	"path/filepath"
 //	"bufio"
+	"time"
 )
 
 var verbose bool
-
 func SetVerbose(inbool bool) {
 	verbose = inbool
 	if verbose {
 		log.Println(" asserver verbose: ", verbose)
+	}
+}
+
+var stdin_nokodicmd bool
+func SetNoKodiCmd(inbool bool) {
+	stdin_nokodicmd = inbool
+	if verbose {
+		log.Println(" asserver stdin_nokodicmd: ", stdin_nokodicmd)
 	}
 }
 
@@ -77,7 +85,11 @@ func TCPServeStdin(port int) {
 }
 
 // test with: while [ 1 ]; do echo -ne "GET / HTTP/1.0\n\n\n" | nc 127.0.0.1 9000 | hexdump -C; sleep 0.25; echo -n .; done
-func HTTPServeStdin(port int) {
+func HTTPServeStdin(port int, req_stream_name string) {
+
+	if verbose {
+		log.Println("Entered HTTPServeStdin")
+	}
 
 	localip, err := utils.GetLocalInterfaceIP()
 	log.Println(localip)
@@ -95,7 +107,8 @@ func HTTPServeStdin(port int) {
 		//w.Write(os.Stdin)
 		//io.Copy(w, os.Stdin)
 		log.Println("Entered handlefunc")
-		data := make([]byte, 16) // SO:14469511
+		firsttime := true
+		data := make([]byte, 2048) // SO:14469511
 		for {
 			//data = data[:cap(data)]
 			//n, err := stdin_reader.Read(data)
@@ -108,11 +121,15 @@ func HTTPServeStdin(port int) {
 			//}
 			//fmt.Printf("%d: %v\n", n, data) // SO:24489384
 			//w.Write(data)
-			n, err := io.ReadFull(os.Stdin, data) // SO:29060922
+			_, err := io.ReadFull(os.Stdin, data) // SO:29060922; was n, err
+			if firsttime {
+				// this is the very first time we see any data, before that ReadFull blocks
+				firsttime = false
+			}
 			for err == nil {
-				fmt.Printf("%d: %v\n", n, data) // SO:24489384
+				//fmt.Printf("%d: %v\n", n, data) // SO:24489384
 				w.Write(data)
-				n, err = io.ReadFull(os.Stdin, data)
+				_, err = io.ReadFull(os.Stdin, data)
 			}
 			if err != io.EOF {
 				panic(err)
@@ -126,12 +143,55 @@ func HTTPServeStdin(port int) {
 		Handler: m,
 	}
 
-	// send xbmc the file query
-	file := "-"
-	if verbose {
-		log.Println("Running HTTPServeStdin: srvaddr", srvaddr, "Send", "http", localip, file, port)
+	// this section should delay sending command to xbmc/Kodi, until first bytes arrive for the stream
+	// actually, nothing is visible much but change of mtime (size is still reported zero)
+	// so, wait for mtime change instead
+	//var size int64 = 0
+	//for size == 0 { // that is: while size==0
+	//	stdinfi, err := os.Stdin.Stat() // SO:22563616
+	//	if err != nil {
+	//		fmt.Println("os.Stdin.Stat() error", err)
+	//		os.Exit(1)
+	//	}
+	//	size = stdinfi.Size()
+	//	//log.Println("os.Stdin.Stat() ", stdinfi)
+	//	fmt.Printf("stdin name %s size %d mode %s mtime %s isdir %t\n  sys %s\n", stdinfi.Name(), size, stdinfi.Mode(), stdinfi.ModTime(), stdinfi.IsDir(), stdinfi.Sys()) // stdinfi.Sys()
+	//	time.Sleep(250*time.Millisecond)
+	//}
+	var first_mtime, now_mtime time.Time
+	stdinfi, err := os.Stdin.Stat() // SO:22563616
+	if err != nil {
+		fmt.Println("os.Stdin.Stat() error", err)
+		os.Exit(1)
 	}
-	utils.Send("http", localip, file, port)// was go
+	// there is no a = b = 1 in go, so assign single value to multiple vars like this:
+	first_mtime, now_mtime = stdinfi.ModTime(), stdinfi.ModTime()
+	for first_mtime == now_mtime {
+		//if verbose {
+		//	fmt.Printf("stdin name %s size %d mode %s mtime %s isdir %t\n  sys %s\n", stdinfi.Name(), stdinfi.Size(), stdinfi.Mode(), stdinfi.ModTime(), stdinfi.IsDir(), stdinfi.Sys()) // stdinfi.Sys()
+		//}
+		time.Sleep(250*time.Millisecond)
+		stdinfi, err := os.Stdin.Stat() // SO:22563616
+		if err != nil {
+			fmt.Println("os.Stdin.Stat() error", err)
+			os.Exit(1)
+		}
+		now_mtime = stdinfi.ModTime()
+	}
+
+	if verbose {
+		log.Println("Running HTTPServeStdin: srvaddr", srvaddr, "http", localip, port)
+	}
+
+	if ! stdin_nokodicmd {
+		time.Sleep(1000*time.Millisecond)
+		// send xbmc the file query
+		file := req_stream_name
+		utils.Send("http", localip, file, port)// was go
+		if verbose {
+			log.Println("Sent Kodi command for http", localip, file, port)
+		}
+	}
 
 	// Continue to process new requests until an error occurs
 	log.Fatal(s.ListenAndServe())

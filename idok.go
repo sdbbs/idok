@@ -27,23 +27,25 @@ func main() {
 
 	// flags
 	var (
-		xbmcaddr     = flag.String("target", "", "xbmc/kodi ip (raspbmc address, ip or hostname)")
-		username     = flag.String("login", "", "jsonrpc login (configured in xbmc settings)")
-		password     = flag.String("password", "", "jsonrpc password (configured in xbmc settings)")
-		viassh       = flag.Bool("ssh", false, "use SSH Tunnelling (need ssh user and password)")
-		nossh        = flag.Bool("nossh", false, "force to not use SSH tunnel - usefull to override configuration file")
-		port         = flag.Int("port", 8080, "local port (ignored if you use ssh option)")
-		sshuser      = flag.String("sshuser", "pi", "ssh login")
-		sshpassword  = flag.String("sshpass", "", "ssh password")
-		sshport      = flag.Int("sshport", 22, "target ssh port")
-		version      = flag.Bool("version", false, fmt.Sprintf("Print the current version (%s)", VERSION))
-		xbmcport     = flag.Int("targetport", 80, "XBMC/Kodi jsonrpc port")
-		stdin        = flag.Bool("stdin", false, "read file from stdin to stream")
-		confexample  = flag.Bool("conf-example", false, "print a configuration file example to STDOUT")
-		disablecheck = flag.Bool("disable-check-release", false, "disable release check")
-		checknew     = flag.Bool("check-release", false, "check for new release")
-		verbose      = flag.Bool("verbose", false, "bit more verbose log output")
-		sendtokodi   = flag.Bool("sendtokodi", false, "Send the argument (URL) to SendToKodi addon in Kodi")
+		xbmcaddr        = flag.String("target", "", "xbmc/kodi ip (raspbmc address, ip or hostname)")
+		username        = flag.String("login", "", "jsonrpc login (configured in xbmc settings)")
+		password        = flag.String("password", "", "jsonrpc password (configured in xbmc settings)")
+		viassh          = flag.Bool("ssh", false, "use SSH Tunnelling (need ssh user and password)")
+		nossh           = flag.Bool("nossh", false, "force to not use SSH tunnel - usefull to override configuration file")
+		port            = flag.Int("port", 8080, "local port (ignored if you use ssh option)")
+		sshuser         = flag.String("sshuser", "pi", "ssh login")
+		sshpassword     = flag.String("sshpass", "", "ssh password")
+		sshport         = flag.Int("sshport", 22, "target ssh port")
+		version         = flag.Bool("version", false, fmt.Sprintf("Print the current version (%s)", VERSION))
+		xbmcport        = flag.Int("targetport", 80, "XBMC/Kodi jsonrpc port")
+		stdin           = flag.Bool("stdin", false, "read file from stdin to stream")
+		stdin_outnm     = flag.String("stdin_outnm", "out.mp4", "fake name of the stdin stream in the output url")
+		stdin_nokodicmd = flag.Bool("stdin_nokodicmd", false, "If set/true, then no Kodi command is sent (tests stdin server)")
+		confexample     = flag.Bool("conf-example", false, "print a configuration file example to STDOUT")
+		disablecheck    = flag.Bool("disable-check-release", false, "disable release check")
+		checknew        = flag.Bool("check-release", false, "check for new release")
+		verbose         = flag.Bool("verbose", false, "bit more verbose log output")
+		sendtokodi      = flag.Bool("sendtokodi", false, "Send the argument (URL) to SendToKodi addon in Kodi")
 	)
 
 	flag.Usage = utils.Usage
@@ -52,6 +54,7 @@ func main() {
 
 	utils.SetVerbose(*verbose)
 	asserver.SetVerbose(*verbose)
+	asserver.SetNoKodiCmd(*stdin_nokodicmd)
 
 	// print the current version
 	if *version {
@@ -252,7 +255,7 @@ func main() {
 				log.Println("Running TCPServeStdin", *port)
 			}
 			//asserver.TCPServeStdin(*port)
-			asserver.HTTPServeStdin(*port)
+			asserver.HTTPServeStdin(*port, *stdin_outnm)
 		}
 	}
 }
