@@ -43,6 +43,7 @@ func main() {
 		disablecheck = flag.Bool("disable-check-release", false, "disable release check")
 		checknew     = flag.Bool("check-release", false, "check for new release")
 		verbose      = flag.Bool("verbose", false, "bit more verbose log output")
+		sendtokodi   = flag.Bool("sendtokodi", false, "Send the argument (URL) to SendToKodi addon in Kodi")
 	)
 
 	flag.Usage = utils.Usage
@@ -190,6 +191,18 @@ func main() {
 			fmt.Println("\033[33mYou must provide a file to serve\033[0m")
 			flag.Usage()
 			os.Exit(2)
+		}
+
+		if *sendtokodi {
+			isvalid, validurl := utils.IsValidURL(flag.Arg(0))
+			if (isvalid) {
+				log.Println("Sending to SendToKodi: %s", validurl)
+				utils.PlayViaSendToKodi(validurl)
+				os.Exit(0)
+			} else {
+				log.Println("URL not good, exiting")
+				os.Exit(2)
+			}
 		}
 
 		if youtube, vid := utils.IsYoutubeURL(flag.Arg(0)); youtube {

@@ -25,6 +25,17 @@ func IsYoutubeURL(query string) (bool, string) {
 
 }
 
+// check if argument is a valid url
+func IsValidURL(query string) (bool, string) {
+
+	u, err := url.ParseRequestURI(query)
+	if err != nil {
+		return false, ""
+	}
+	return true, u.String()
+
+}
+
 // check other stream
 // return values are "is other scheme" and "is local"
 func IsOtherScheme(query string) (isscheme bool, islocal bool) {

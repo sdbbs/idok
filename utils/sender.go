@@ -95,6 +95,25 @@ func PlayYoutube(vidid string) <-chan int {
 	return checkPlaying()
 }
 
+func PlayViaSendToKodi(vidid string) <-chan int {
+
+	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(SENDTOKODIAPI, vidid))}
+	if verbose {
+		log.Println(" PlayViaSendToKodi request: ", request)
+	}
+	r, err := http.Post(GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(SENDTOKODIAPI, vidid)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	response, _ := ioutil.ReadAll(r.Body)
+	log.Println(string(response))
+
+	// handle CTRL+C to stop
+	go OnQuit()
+
+	return checkPlaying()
+}
+
 // test if media is playing, write 1 in returned chan when media has finished.
 func checkPlaying() <-chan int {
 	tick := time.Tick(TICK_CHECK * time.Second)

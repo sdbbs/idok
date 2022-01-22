@@ -22,4 +22,9 @@ const (
 	"method": "Player.Open", 
 	"params":{"item": {"file" : "plugin://plugin.video.youtube/?action=play_video&videoid=%s" }}, 
 	"id" : "1"}`
+
+	SENDTOKODIAPI = `{"jsonrpc": "2.0",
+	"method": "Player.Open",
+	"params":{"item": {"file" : "plugin://plugin.video.sendtokodi/?%s" }},
+	"id" : "1"}`
 )
