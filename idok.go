@@ -45,11 +45,12 @@ func main() {
 		verbose      = flag.Bool("verbose", false, "bit more verbose log output")
 	)
 
-	utils.SetVerbose(*verbose)
-	asserver.SetVerbose(*verbose)
 	flag.Usage = utils.Usage
 
 	flag.Parse()
+
+	utils.SetVerbose(*verbose)
+	asserver.SetVerbose(*verbose)
 
 	// print the current version
 	if *version {
@@ -135,7 +136,16 @@ func main() {
 
 	utils.SetTarget(conf)
 
-	log.Println("Checking if XMBC/Kodi is online, by asking it for it jsonrpc version")
+	// note: method is mostly Player.Open, via utils/const.go: BODY and YOUTUBEAPI
+	// in xbmc/xbmc/interfaces/json-rpc/JSONServiceDescription.cpp:  { "Player.Open", CPlayerOperations::Open },
+	// xbmc-master/xbmc/interfaces/json-rpc/PlayerOperations.cpp:JSONRPC_STATUS CPlayerOperations::Open(const std::string &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+    //    "id":1,"jsonrpc":"2.0",
+    //    "method":"Player.Open",
+    //    "params": { "item": { "file": "tcp://192.168.0.5:8080/" } }
+
+	if *verbose{
+		log.Println("Checking if XMBC/Kodi is online, by asking it for it jsonrpc version")
+	}
 	resp, err := http.Post(utils.GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(
 		`{"id":1, "jsonrpc":"2.0","method":"JSONRPC.Version"}` ))
 	if *verbose{
@@ -154,8 +164,6 @@ func main() {
 		log.Println("  Trailer          :", resp.Trailer          )
 		log.Println("  Request          :", resp.Request          )
 		log.Println("  TLS              :", resp.TLS              )
-	} else {
-		log.Println("jsonrpc err: ", err) // , ", response: ", resp
 	}
 
 	if ( (err != nil) || (resp.StatusCode != http.StatusOK) ) { // http.StatusOK = 200
@@ -163,12 +171,15 @@ func main() {
 		fmt.Println("Probably best to exit now, ei?\n")
 		os.Exit(2)
 	} else {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
+		if *verbose{
+
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			bodyString := string(bodyBytes)
+			log.Println("Jsonrpc version: ", bodyString)
 		}
-		bodyString := string(bodyBytes)
-		log.Println("Jsonrpc version: ", bodyString)
 	}
 
 	var dir, file string
@@ -206,16 +217,29 @@ func main() {
 		config := tunnel.NewConfig(*sshuser, *sshpassword)
 		// serve ssh tunnel !
 		if !*stdin {
+			if *verbose{
+				log.Println("Running SshHTTPForward", config, file, dir)
+			}
 			tunnel.SshHTTPForward(config, file, dir)
 		} else {
+			if *verbose{
+				log.Println("Running SshForwardStdin", config)
+			}
 			tunnel.SshForwardStdin(config)
 		}
 	} else {
 		// serve local port !
 		if !*stdin {
+			if *verbose{
+				log.Println("Running HttpServe", file, dir, *port)
+			}
 			asserver.HttpServe(file, dir, *port)
 		} else {
-			asserver.TCPServeStdin(*port)
+			if *verbose{
+				log.Println("Running TCPServeStdin", *port)
+			}
+			//asserver.TCPServeStdin(*port)
+			asserver.HTTPServeStdin(*port)
 		}
 	}
 }

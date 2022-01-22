@@ -23,6 +23,9 @@ type itemresp struct {
 
 func SetVerbose(inbool bool) {
 	verbose = inbool
+	if verbose {
+		log.Println(" utils verbose: ", verbose)
+	}
 }
 
 // Send the play command to Kodi/XBMC.
@@ -30,7 +33,14 @@ func Send(scheme, host, file string, port int) <-chan int {
 
 	u := url.URL{Path: file}
 	file = u.String()
-	addr := fmt.Sprintf("%s://%s:%d/%s", scheme, host, port, file)
+	var addr string
+	if file == "/" {
+		addr = fmt.Sprintf("%s://%s:%d/", scheme, host, port)
+	} else if file == "-" {
+		addr = fmt.Sprintf("%s://%s:%d", scheme, host, port)
+	} else {
+		addr = fmt.Sprintf("%s://%s:%d/%s", scheme, host, port, file)
+	}
 
 	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(BODY, addr))}
 	if verbose {
