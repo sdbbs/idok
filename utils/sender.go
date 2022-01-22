@@ -57,8 +57,12 @@ func SendBasicStream(uri string, local bool) <-chan int {
 }
 
 // Ask to play youtube video.
-func PlayYoutube(vidid string) <-chan int {
+func PlayYoutube(vidid string, verbose bool) <-chan int {
 
+	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(YOUTUBEAPI, vidid))}
+	if verbose {
+		log.Println("request: ", request)
+	}
 	r, err := http.Post(GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(YOUTUBEAPI, vidid)))
 	if err != nil {
 		log.Fatal(err)

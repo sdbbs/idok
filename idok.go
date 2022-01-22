@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+	"net/http"
+	"bytes"
 
-	"github.com/metal3d/idok/asserver"
-	"github.com/metal3d/idok/tunnel"
-	"github.com/metal3d/idok/utils"
+	"github.com/sdbbs/idok/asserver"
+	"github.com/sdbbs/idok/tunnel"
+	"github.com/sdbbs/idok/utils"
 )
 
 // Current VERSION - should be var and not const to be
@@ -39,6 +41,7 @@ func main() {
 		confexample  = flag.Bool("conf-example", false, "print a configuration file example to STDOUT")
 		disablecheck = flag.Bool("disable-check-release", false, "disable release check")
 		checknew     = flag.Bool("check-release", false, "check for new release")
+		verbose      = flag.Bool("verbose", false, "bit more verbose log output")
 	)
 
 	flag.Usage = utils.Usage
@@ -75,6 +78,20 @@ func main() {
 	// check if conf file exists and override options
 	if filename, found := utils.CheckLocalConfigFiles(); found {
 		utils.LoadLocalConfig(filename, conf)
+	}
+
+	if *verbose {
+		log.Println("Configuration settings are:")
+		log.Println("Target       : ", *xbmcaddr)
+		log.Println("Targetport   : ", *xbmcport)
+		log.Println("Localport    : ", *port)
+		log.Println("User         : ", *username)
+		log.Println("Password     : ", *password)
+		log.Println("Sshuser      : ", *sshuser)
+		log.Println("Sshpassword  : ", *sshpassword)
+		log.Println("Sshport      : ", *sshport)
+		log.Println("Ssh          : ", *viassh)
+		log.Println("ReleaseCheck : ", *disablecheck)
 	}
 
 	// Release check
@@ -115,6 +132,35 @@ func main() {
 
 	utils.SetTarget(conf)
 
+	log.Println("Checking if XMBC/Kodi is online, by asking it for it jsonrpc version")
+	resp, err := http.Post(utils.GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(
+		`{"id":1, "jsonrpc":"2.0","method":"JSONRPC.Version"}` ))
+	if *verbose{
+		log.Println("jsonrpc err: ", err, ", Response:")
+		log.Println("  Status           :", resp.Status           )
+		log.Println("  StatusCode       :", resp.StatusCode       )
+		log.Println("  Proto            :", resp.Proto            )
+		log.Println("  ProtoMajor       :", resp.ProtoMajor       )
+		log.Println("  ProtoMinor       :", resp.ProtoMinor       )
+		log.Println("  Header           :", resp.Header           )
+		//log.Println("  Body             :", resp.Body             )
+		log.Println("  ContentLength    :", resp.ContentLength    )
+		log.Println("  TransferEncoding :", resp.TransferEncoding )
+		log.Println("  Close            :", resp.Close            )
+		log.Println("  Uncompressed     :", resp.Uncompressed     )
+		log.Println("  Trailer          :", resp.Trailer          )
+		log.Println("  Request          :", resp.Request          )
+		log.Println("  TLS              :", resp.TLS              )
+	} else {
+		log.Println("jsonrpc err: ", err, ", response: ", resp)
+	}
+
+	if (resp.StatusCode != 200) {
+		fmt.Println("\nSorrie me lad, old Koddie cannot be reached.")
+		fmt.Println("Probably best to exit now, ei?\n")
+		os.Exit(2)
+	}
+
 	var dir, file string
 
 	// we don't use stdin, so we should check if scheme is file, youtube or other...
@@ -127,7 +173,7 @@ func main() {
 
 		if youtube, vid := utils.IsYoutubeURL(flag.Arg(0)); youtube {
 			log.Println("Youtube video, using youtube addon from XBMC/Kodi")
-			utils.PlayYoutube(vid)
+			utils.PlayYoutube(vid, *verbose)
 			os.Exit(0)
 		}
 
