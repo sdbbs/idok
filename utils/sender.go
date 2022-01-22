@@ -12,12 +12,17 @@ import (
 )
 
 const TICK_CHECK = 1
+var verbose = false
 
 // response of get players
 type itemresp struct {
 	Id      int
 	Jsonrpc string
 	Result  []map[string]interface{}
+}
+
+func SetVerbose(inbool bool) {
+	verbose = inbool
 }
 
 // Send the play command to Kodi/XBMC.
@@ -27,6 +32,10 @@ func Send(scheme, host, file string, port int) <-chan int {
 	file = u.String()
 	addr := fmt.Sprintf("%s://%s:%d/%s", scheme, host, port, file)
 
+	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(BODY, addr))}
+	if verbose {
+		log.Println(" Send request: ", request)
+	}
 	r, err := http.Post(GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(BODY, addr)))
 	if err != nil {
 		log.Fatal(err)
@@ -57,11 +66,11 @@ func SendBasicStream(uri string, local bool) <-chan int {
 }
 
 // Ask to play youtube video.
-func PlayYoutube(vidid string, verbose bool) <-chan int {
+func PlayYoutube(vidid string) <-chan int {
 
 	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(YOUTUBEAPI, vidid))}
 	if verbose {
-		log.Println("request: ", request)
+		log.Println(" PlayYoutube request: ", request)
 	}
 	r, err := http.Post(GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(YOUTUBEAPI, vidid)))
 	if err != nil {

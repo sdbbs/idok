@@ -3,7 +3,7 @@ package asserver
 
 import (
 	"fmt"
-	"github.com/metal3d/idok/utils"
+	"github.com/sdbbs/idok/utils"
 	"io"
 	"log"
 	"net"
@@ -11,6 +11,12 @@ import (
 	"os"
 	"path/filepath"
 )
+
+var verbose = false
+
+func SetVerbose(inbool bool) {
+	verbose = inbool
+}
 
 // Open a port locally and tell to kodi to stream
 // from this port

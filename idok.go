@@ -10,6 +10,7 @@ import (
 	"time"
 	"net/http"
 	"bytes"
+	"io/ioutil" //  Go 1.16 -- Q1 2021 -- ioutil deprecation: ioutil.ReadAll() => io.ReadAll()):
 
 	"github.com/sdbbs/idok/asserver"
 	"github.com/sdbbs/idok/tunnel"
@@ -44,6 +45,8 @@ func main() {
 		verbose      = flag.Bool("verbose", false, "bit more verbose log output")
 	)
 
+	utils.SetVerbose(*verbose)
+	asserver.SetVerbose(*verbose)
 	flag.Usage = utils.Usage
 
 	flag.Parse()
@@ -152,13 +155,20 @@ func main() {
 		log.Println("  Request          :", resp.Request          )
 		log.Println("  TLS              :", resp.TLS              )
 	} else {
-		log.Println("jsonrpc err: ", err, ", response: ", resp)
+		log.Println("jsonrpc err: ", err) // , ", response: ", resp
 	}
 
-	if (resp.StatusCode != 200) {
+	if ( (err != nil) || (resp.StatusCode != http.StatusOK) ) { // http.StatusOK = 200
 		fmt.Println("\nSorrie me lad, old Koddie cannot be reached.")
 		fmt.Println("Probably best to exit now, ei?\n")
 		os.Exit(2)
+	} else {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bodyString := string(bodyBytes)
+		log.Println("Jsonrpc version: ", bodyString)
 	}
 
 	var dir, file string
@@ -173,7 +183,7 @@ func main() {
 
 		if youtube, vid := utils.IsYoutubeURL(flag.Arg(0)); youtube {
 			log.Println("Youtube video, using youtube addon from XBMC/Kodi")
-			utils.PlayYoutube(vid, *verbose)
+			utils.PlayYoutube(vid)
 			os.Exit(0)
 		}
 

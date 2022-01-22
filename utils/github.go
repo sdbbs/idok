@@ -13,7 +13,7 @@ type Release struct {
 	Pre     bool   `json:"prerelease"`
 }
 
-const REPO = "https://api.github.com/repos/metal3d/idok/releases"
+const REPO = "https://api.github.com/repos/sdbbs/idok/releases"
 
 func CheckRelease() (*Release, error) {
 	resp, err := http.Get(REPO)
