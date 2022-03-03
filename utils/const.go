@@ -18,13 +18,21 @@ const (
 	 }
  }`
 
-	YOUTUBEAPI = `{"jsonrpc": "2.0", 
-	"method": "Player.Open", 
-	"params":{"item": {"file" : "plugin://plugin.video.youtube/?action=play_video&videoid=%s" }}, 
+	YOUTUBEAPI = `{"jsonrpc": "2.0",
+	"method": "Player.Open",
+	"params":{"item": {"file" : "plugin://plugin.video.youtube/?action=play_video&videoid=%s" }},
 	"id" : "1"}`
 
-	SENDTOKODIAPI = `{"jsonrpc": "2.0",
+	PLAYSENDTOKODIAPI = `{"jsonrpc": "2.0",
 	"method": "Player.Open",
 	"params":{"item": {"file" : "plugin://plugin.video.sendtokodi/?%s" }},
+	"id" : "1"}`
+
+	ADDSENDTOKODIAPI = `{"jsonrpc": "2.0",
+	"method": "Playlist.Add",
+	"params":{
+    "playlistid": 1,
+    "item": {"file" : "plugin://plugin.video.sendtokodi/?%s" }
+  },
 	"id" : "1"}`
 )

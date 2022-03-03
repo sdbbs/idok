@@ -97,11 +97,30 @@ func PlayYoutube(vidid string) <-chan int {
 
 func PlayViaSendToKodi(vidid string) <-chan int {
 
-	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(SENDTOKODIAPI, vidid))}
+	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(PLAYSENDTOKODIAPI, vidid))}
 	if verbose {
 		log.Println(" PlayViaSendToKodi request: ", request)
 	}
-	r, err := http.Post(GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(SENDTOKODIAPI, vidid)))
+	r, err := http.Post(GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(PLAYSENDTOKODIAPI, vidid)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	response, _ := ioutil.ReadAll(r.Body)
+	log.Println(string(response))
+
+	// handle CTRL+C to stop
+	go OnQuit()
+
+	return checkPlaying()
+}
+
+func AddViaSendToKodi(vidid string) <-chan int {
+
+	request := []interface{} {GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(ADDSENDTOKODIAPI, vidid))}
+	if verbose {
+		log.Println(" AddViaSendToKodi request: ", request)
+	}
+	r, err := http.Post(GlobalConfig.JsonRPC, "application/json", bytes.NewBufferString(fmt.Sprintf(ADDSENDTOKODIAPI, vidid)))
 	if err != nil {
 		log.Fatal(err)
 	}

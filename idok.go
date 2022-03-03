@@ -14,7 +14,8 @@ import (
 
 	"github.com/sdbbs/idok/asserver"
 	"github.com/sdbbs/idok/tunnel"
-	"github.com/sdbbs/idok/utils"
+	//"github.com/sdbbs/idok/utils"
+	"./utils"
 )
 
 // Current VERSION - should be var and not const to be
@@ -45,7 +46,8 @@ func main() {
 		disablecheck    = flag.Bool("disable-check-release", false, "disable release check")
 		checknew        = flag.Bool("check-release", false, "check for new release")
 		verbose         = flag.Bool("verbose", false, "bit more verbose log output")
-		sendtokodi      = flag.Bool("sendtokodi", false, "Send the argument (URL) to SendToKodi addon in Kodi")
+		sendtokodiplay  = flag.Bool("sendtokodiplay", false, "Send the argument (URL) to SendToKodi addon in Kodi and play")
+		sendtokodiadd   = flag.Bool("sendtokodiadd", false, "Send the argument (URL) to SendToKodi addon in Kodi and add to video (id 1) playlist")
 	)
 
 	flag.Usage = utils.Usage
@@ -196,11 +198,23 @@ func main() {
 			os.Exit(2)
 		}
 
-		if *sendtokodi {
+		if *sendtokodiplay {
 			isvalid, validurl := utils.IsValidURL(flag.Arg(0))
 			if (isvalid) {
-				log.Println("Sending to SendToKodi: %s", validurl)
+				log.Println("Sending to SendToKodi, to play: %s", validurl)
 				utils.PlayViaSendToKodi(validurl)
+				os.Exit(0)
+			} else {
+				log.Println("URL not good, exiting")
+				os.Exit(2)
+			}
+		}
+
+		if *sendtokodiadd {
+			isvalid, validurl := utils.IsValidURL(flag.Arg(0))
+			if (isvalid) {
+				log.Println("Sending to SendToKodi, to add to playlist id 1 (video): %s", validurl)
+				utils.AddViaSendToKodi(validurl)
 				os.Exit(0)
 			} else {
 				log.Println("URL not good, exiting")
