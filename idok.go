@@ -14,8 +14,7 @@ import (
 
 	"github.com/sdbbs/idok/asserver"
 	"github.com/sdbbs/idok/tunnel"
-	//"github.com/sdbbs/idok/utils"
-	"./utils"
+	"github.com/sdbbs/idok/utils"
 )
 
 // Current VERSION - should be var and not const to be
